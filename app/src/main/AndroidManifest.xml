@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+
+    <queries>
+        <package android:name="tv.samba.ssm" />
+        <package android:name="com.sony.dtv.sonyselect" />
+        <package android:name="com.google.android.apps.tv.launcherx" />
+        <package android:name="com.google.android.tvlauncher" />
+        <package android:name="com.google.android.tvrecommendations" />
+        <intent><action android:name="android.settings.PRIVACY_SETTINGS" /></intent>
+        <intent><action android:name="android.settings.VPN_SETTINGS" /></intent>
+        <package android:name="org.jellyfin.androidtv" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.WIFI_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.APPLICATION_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.DISPLAY_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.SOUND_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.DATE_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.DEVICE_INFO_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.ACCESSIBILITY_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.HOME_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.CAPTIONING_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.INTERNAL_STORAGE_SETTINGS" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:banner="@drawable/tv_banner"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.DumbTv">
+
+        <service android:name=".ads.AdCaptureProbeService" android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+        <receiver android:name=".privacy.FirewallBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name=".privacy.TrackerFirewallService"
+            android:label="TV tracker firewall"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="true"
+            android:foregroundServiceType="specialUse">
+            <intent-filter><action android:name="android.net.VpnService" /></intent-filter>
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Local per-app firewall for TV recommendations and viewing-recognition applications" />
+        </service>
+        <service
+            android:name=".HomeButtonService"
+            android:label="@string/home_override_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/home_button_service" />
+        </service>
+
+        <activity
+            android:name=".MainActivity"
+            android:banner="@drawable/tv_banner"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

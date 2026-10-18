@@ -1,0 +1,40 @@
+# Android / Gradle generated files
+.gradle/
+.kotlin/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+
+# Local SDK paths and editor state
+local.properties
+*.iml
+.idea/
+.vscode/
+
+# Signing keys and local secrets (keep example configuration public)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local TV recordings, screenshots, OCR reports, and performance captures
+/artifacts/
+/ad-capture-*/
+/tv-screen-*.png
+/tv-performance-*/
+/bravia-performance-*/
+/dumbtv-performance-*/
+*.log
+
+# OS metadata
+.DS_Store
+._*
+Thumbs.db

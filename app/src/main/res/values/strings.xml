@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dumb TV</string>
+    <string name="home_override_name">Dumb TV Home button override</string>
+    <string name="home_override_description">Returns to Dumb TV when another launcher opens its Home activity. Use this if your TV keeps opening Google TV after choosing Dumb TV as Home. This service observes launcher window names; it does not intercept remote keys or read screen contents. Turn it off here to restore normal Home routing.</string>
+</resources>
