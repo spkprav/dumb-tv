@@ -2,7 +2,7 @@
 
 **Make your smart TV dumb again.**
 
-A simple Android TV launcher with your apps, a clock, and cute & serene wallpapers. No recommendation feed or sponsored rows in the launcher.
+A simple Android TV launcher with your apps, a clock, and colorful nature wallpapers. No recommendation feed or sponsored rows in the launcher.
 
 ## Features
 
@@ -46,7 +46,24 @@ adb shell cmd package set-home-activity org.dumbtv.launcher/.MainActivity
 adb shell input keyevent KEYCODE_HOME
 ```
 
-If Home still opens Google TV, enable **Dumb TV Home button override** in Android's Accessibility settings. Keep the stock launcher installed so you can switch back in Android's default Home settings.
+### Sony BRAVIA Home routing
+
+Some Sony TVs open Google TV even after you select Dumb TV as the default. With the TV connected and authorized in ADB, run:
+
+```sh
+bash scripts/fix-sony-home.sh status
+bash scripts/fix-sony-home.sh apply
+```
+
+The script checks where Android routes Home and disables the stock launcher or setup recovery package for the current TV user only if it takes precedence. Press Home to test, then restart your TV to verify startup. Once Home goes directly to Dumb TV, you can turn off **Dumb TV Home button override** in Android’s Accessibility settings.
+
+Keep ADB access available. If Dumb TV gets stuck in a crash loop, or if you want Google TV or its setup flow back, run:
+
+```sh
+bash scripts/fix-sony-home.sh restore
+```
+
+The packages stay installed. On other TVs, you can use the accessibility override to return to Dumb TV when the stock launcher opens. Google TV may appear briefly during that redirect.
 
 ## Setup
 

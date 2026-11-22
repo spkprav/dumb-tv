@@ -159,6 +159,15 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { homeModel.wallpapers.rotateWhileVisible() }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                delay(1_200)
+                while (true) {
+                    homeModel.refreshUsage()
+                    delay(60_000)
+                }
+            }
+        }
         setContent {
             DumbTvTheme {
                 HomeScreen(

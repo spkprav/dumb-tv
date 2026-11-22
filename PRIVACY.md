@@ -19,6 +19,8 @@ This improves control over selected packages without a router change, but is not
 
 For stronger off-device network isolation, deny the TV WAN egress on both IPv4 and IPv6 while allowing only the needed local services (for example Jellyfin at your local Jellyfin server). That stops internet streaming, updates and external wallpaper downloads. It does not prevent the TV recording data locally or uploading it later if internet access is restored. This router-level policy has not been applied by the launcher.
 
+If you grant Usage access, the launcher reads Android’s local usage history to show time spent in apps today and recent screen-on times. The launcher saves today’s per-app totals and the three most recent screen-on times on the TV so they survive a restart. It refreshes these in the background while Usage access is enabled. This data stays on the TV and the launcher clears it after Usage access is revoked.
+
 The launcher disables Android app backup for its own data. Jellyfin credentials are not embedded in the APK, and its encrypted session is stored in the no-backup directory. Online wallpapers still contact their image host; select Fixed to avoid those downloads.
 
 The app’s Settings privacy screen provides controls and this limitation notice; enabling it does not claim to remove all tracking or erase server-side histories.

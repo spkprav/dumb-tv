@@ -15,6 +15,8 @@ import org.dumbtv.launcher.apps.InstalledApps
 import org.dumbtv.launcher.apps.LaunchableApp
 import org.dumbtv.launcher.settings.SettingsDestination
 import org.dumbtv.launcher.settings.SettingsDestinations
+import org.dumbtv.launcher.usage.TvUsage
+import org.dumbtv.launcher.usage.TvUsageJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -25,6 +27,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     val wallpapers = org.dumbtv.launcher.wallpaper.Wallpapers(app)
     val apps = MutableStateFlow<List<LaunchableApp>>(emptyList())
     val loading = MutableStateFlow(true)
+    internal val usage = MutableStateFlow<TvUsage.Snapshot?>(null)
+
+    internal suspend fun refreshUsage() {
+        usage.value = withContext(Dispatchers.IO) {
+            val context = getApplication<Application>()
+            val snapshot = try {
+                TvUsage.read(context)
+            } catch (_: SecurityException) {
+                TvUsage.Snapshot(hasAccess = false)
+            }
+            TvUsageJob.schedule(context, snapshot.hasAccess)
+            snapshot
+        }
+    }
     private val preferences = app.getSharedPreferences("app_order", 0)
     // Per-package overrides keep defaults working for apps installed later.
     val appVisibility = MutableStateFlow<Map<String, Boolean>>(preferences.all

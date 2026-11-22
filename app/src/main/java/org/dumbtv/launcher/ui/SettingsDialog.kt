@@ -43,6 +43,7 @@ import org.dumbtv.launcher.HomeViewModel
 import org.dumbtv.launcher.apps.HomeApps
 import org.dumbtv.launcher.dns.PrivateDns
 import org.dumbtv.launcher.privacy.TrackerFirewallService
+import org.dumbtv.launcher.settings.SettingsDestination
 import org.dumbtv.launcher.settings.SettingsDestinations
 
 private data class SettingsEntry(val title: String, val detail: String, val value: String = "›", val action: () -> Unit)
@@ -64,6 +65,7 @@ internal fun SettingsDialog(viewModel: HomeViewModel, initialApps: Boolean,
     val visibility by viewModel.appVisibility.collectAsState()
     val minutes by viewModel.wallpapers.minutes.collectAsState()
     val wallpaper by viewModel.wallpapers.title.collectAsState()
+    val usage by viewModel.usage.collectAsState()
     val firewall by TrackerFirewallService.status.collectAsState()
     val selectedCount = apps.count { visibility[it.packageName] ?: HomeApps.isDefault(it.packageName, it.label) }
     LaunchedEffect(Unit) { androidx.compose.runtime.withFrameNanos { }; sidebar[page].requestFocus() }
@@ -71,6 +73,9 @@ internal fun SettingsDialog(viewModel: HomeViewModel, initialApps: Boolean,
         0 -> listOf(
             SettingsEntry("Default launcher", "Choose what opens when you press Home", if (defaultHome) "Selected" else "Set up", onChooseHome),
             SettingsEntry("Home button override", "For TVs that keep returning to Google TV", if (homeOverride) "On" else "Set up", onHomeOverride),
+            SettingsEntry("Usage access", "Show app time and recent screen-on times on Home",
+                if (usage?.hasAccess == true) "On" else "Set up",
+                { viewModel.openSettings(SettingsDestination("Usage access", "", android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)) }),
             SettingsEntry("Privacy & tracking", "Tracker firewall and TV privacy controls", if (firewall.active) "On" else "Off", onPrivacy),
             SettingsEntry("Ad protection", "Continuous 3-second checks · mute and inset black cover", "Open", onCaptureTest))
         2 -> listOf(

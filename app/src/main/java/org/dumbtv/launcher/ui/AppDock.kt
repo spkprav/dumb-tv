@@ -2,11 +2,9 @@ package org.dumbtv.launcher.ui
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -20,7 +18,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
@@ -50,11 +47,7 @@ internal fun AppDock(apps: List<LaunchableApp>, focus: FocusRequester, loading: 
             animationSpec = spring(dampingRatio = 0.85f, stiffness = 450f), label = "Dock shelf width")
         Box(Modifier.width(width).height(88.dp).padding(bottom = 8.dp)
             .shadow(20.dp, shape, clip = false)
-            .background(Brush.verticalGradient(listOf(Color(0x70DFE7ED), Color(0x5A94A2B2), Color(0x80778494))), shape)
-            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x35FFFFFF), Color(0x65FFFFFF)))), shape)) {
-            Box(Modifier.fillMaxWidth().height(1.dp).padding(horizontal = 22.dp)
-                .background(Color.White.copy(alpha = 0.35f)))
-        }
+            .homeGlass(shape))
         LazyRow(state = scroll, modifier = Modifier.width(width).height(174.dp).padding(bottom = 9.dp),
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {

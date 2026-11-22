@@ -116,6 +116,7 @@ fun HomeScreen(
     var captureTestOpen by remember { mutableStateOf(false) }
     var privacyOpen by remember { mutableStateOf(false) }
     val apps by viewModel.apps.collectAsState()
+    val usage by viewModel.usage.collectAsState()
     val visibility by viewModel.appVisibility.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val displayedApps = remember(apps, visibility) {
@@ -255,11 +256,14 @@ fun HomeScreen(
                     }
                 }
             } else {
-                Spacer(Modifier.weight(1f))
-                AppDock(displayedApps, focus = dockFocus, loading = loading,
-                    onChooseApps = { appsTab = true; settingsOpen = true },
-                    onOpen = { viewModel.launch(it) }, onInfo = { selected = it })
-                Spacer(Modifier.height(18.dp))
+                Box(Modifier.fillMaxSize()) {
+                    usage?.let { HomeUsage(it, apps, Modifier.padding(top = 12.dp, end = 24.dp)) }
+                    Column(Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)) {
+                        AppDock(displayedApps, focus = dockFocus, loading = loading,
+                            onChooseApps = { appsTab = true; settingsOpen = true },
+                            onOpen = { viewModel.launch(it) }, onInfo = { selected = it })
+                    }
+                }
             }
             }
         }

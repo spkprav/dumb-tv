@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName
 import android.content.Intent
 import android.os.SystemClock
+import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 
 /** Optional, user-enabled fallback for TV firmware that overrides the default HOME role. */
@@ -26,6 +27,13 @@ class HomeButtonService : AccessibilityService() {
         // Observe only other home packages; never request or inspect window contents.
         serviceInfo = serviceInfo.apply {
             packageNames = homeActivities.map { it.packageName }.distinct().toTypedArray()
+        }
+
+        // The stock Home window can already be open when Android binds the service.
+        val bootCount = Settings.Global.getInt(contentResolver, Settings.Global.BOOT_COUNT, -1)
+        val startup = getSharedPreferences("home_override", MODE_PRIVATE)
+        if (bootCount >= 0 && bootCount != startup.getInt("last_boot_count", -1) && openHome()) {
+            startup.edit().putInt("last_boot_count", bootCount).apply()
         }
     }
 

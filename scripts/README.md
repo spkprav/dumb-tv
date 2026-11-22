@@ -1,6 +1,6 @@
 # Developer scripts
 
-These are optional diagnostics for people developing Dumb TV. Installing and using the launcher does not require running them. Run examples from the repository root; the scripts also work from another directory, with relative output paths resolved from your current directory.
+These are optional setup and diagnostic tools for Dumb TV. Installing and using the launcher does not require running them. Run examples from the repository root; the scripts also work from another directory, with relative output paths resolved from your current directory.
 
 ## Requirements
 
@@ -9,7 +9,7 @@ These are optional diagnostics for people developing Dumb TV. Installing and usi
 - Python 3 and `tar` for exporting ad captures.
 - A terminal with interactive input for performance capture.
 
-Connect your TV using your firmware's USB/network debugging workflow. Approve the connection on the TV, then check it with `adb devices -l`. Scripts do not pair devices, enable debugging, install apps, grant permissions, or change the default launcher.
+Connect your TV using your firmware's USB/network debugging workflow. Approve the connection on the TV, then check it with `adb devices -l`. The scripts use an existing authorized ADB connection. The Sony Home routing script changes the default launcher when you run it with `apply`.
 
 ADB lookup order is `ADB_BIN`, `adb` on `PATH`, `$ANDROID_HOME/platform-tools/adb`, then `$ANDROID_SDK_ROOT/platform-tools/adb`.
 
@@ -21,7 +21,11 @@ TV_SERIAL=192.0.2.10:5555 bash scripts/capture-tv-performance.sh
 ADB_BIN="$ANDROID_HOME/platform-tools/adb" bash scripts/pull-ad-capture.sh
 ```
 
-`192.0.2.10:5555` is a placeholder: use the identifier from `adb devices -l`. Both scripts support `--help`. They require a new output directory and refuse to overwrite an existing one. A failed run can leave partial output; choose another directory for a retry.
+`192.0.2.10:5555` is a placeholder: use the identifier from `adb devices -l`. The two capture scripts support `--help` and require a new output directory and refuse to overwrite an existing one. A failed run can leave partial output; choose another directory for a retry.
+
+## Sony BRAVIA Home routing
+
+Run `bash scripts/fix-sony-home.sh status` to see which activity receives Home. Use `apply` to route Home directly to Dumb TV and `restore` to restore the stock packages. See the [Sony BRAVIA setup steps](../README.md#sony-bravia-home-routing) for the effects and recovery instructions.
 
 ## Performance capture
 
@@ -84,6 +88,7 @@ Default outputs live under `artifacts/`, which Git ignores. Delete individual ru
 
 - `capture-tv-performance.sh`: interactive performance collection.
 - `pull-ad-capture.sh`: export and summarize an existing ad-protection session.
-- `lib/adb.sh`: shared package ID, executable lookup, and device selection; sourced by both scripts.
+- `fix-sony-home.sh`: check, fix, or restore Sony BRAVIA Home routing.
+- `lib/adb.sh`: shared package ID, executable lookup, and device selection.
 
 Builds use the repository's Gradle wrapper directly. There are no publishing or release scripts.
