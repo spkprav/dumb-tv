@@ -93,18 +93,13 @@ Enable **DNS blocking** in **Settings → Connections**. It uses `dns.adguard-dn
 
 ### Jellyfin
 
-Jellyfin does not work out of the box. You need a reachable Jellyfin server and the Jellyfin Android TV client.
+Open **Settings → Connections → Movie library**. Enter the server IP or hostname, the port, and your Jellyfin username and password. The screen has an on-screen keyboard, and a USB keyboard works too.
 
-Before building:
+A server on your network is usually **HTTP** and port **8096**. You can type the host and port in their own fields, or put a full address such as `http://192.168.1.20:8096` in the address field. Choose **HTTPS** if your server requires it. Jellyfin’s HTTPS port is often **8920**.
 
-The default `jellyfin.example.invalid` address is a placeholder and will not connect.
+The password is sent to that server and is not stored. The TV keeps the server address and an encrypted session. Sign in, or use Quick Connect when the server has it enabled. Use the same server and profile in the Jellyfin Android TV app.
 
-1. Set `SERVER` in [JellyfinLibrary.kt](app/src/main/java/org/dumbtv/launcher/jellyfin/JellyfinLibrary.kt) to your server address.
-2. Update the allowed host in [network_security_config.xml](app/src/main/res/xml/network_security_config.xml). The current HTTP setup is intended only for a trusted LAN.
-
-After installing, open **Settings → Connections → Movie library** and sign in or use Quick Connect. Sign in to the same server and intended profile in the Jellyfin Android TV client.
-
-The shelf shows up to 24 recently added movies. Selecting a movie opens its details in the Jellyfin client. A server-address setting is not available yet.
+The shelf shows up to 24 recently added movies. Selecting a movie opens it in the Jellyfin Android TV client.
 
 ## Development
 

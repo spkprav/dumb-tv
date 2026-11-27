@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "org.dumbtv.launcher"
+        applicationId = (findProperty("tvApplicationId") as String?) ?: "org.dumbtv.launcher"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

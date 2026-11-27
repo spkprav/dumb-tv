@@ -7,9 +7,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -31,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -38,7 +40,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
-import kotlinx.coroutines.launch
 import org.dumbtv.launcher.HomeViewModel
 import org.dumbtv.launcher.apps.HomeApps
 import org.dumbtv.launcher.dns.PrivateDns
@@ -55,11 +56,9 @@ internal fun SettingsDialog(viewModel: HomeViewModel, initialApps: Boolean,
     defaultHome: Boolean, homeOverride: Boolean, dns: PrivateDns.Snapshot, dnsBusy: Boolean,
     onChooseHome: () -> Unit, onHomeOverride: () -> Unit, onToggleDns: () -> Unit,
     onPrivacy: () -> Unit, onCaptureTest: () -> Unit, onJellyfin: () -> Unit, onClose: () -> Unit) {
-    val scope = rememberCoroutineScope()
     val pages = listOf("General", "Apps", "Appearance", "Connections", "System")
     var page by remember { mutableIntStateOf(if (initialApps) 1 else 0) }
     val sidebar = remember { List(pages.size) { FocusRequester() } }
-    val content = remember { FocusRequester() }
     val close = remember { FocusRequester() }
     val apps by viewModel.apps.collectAsState()
     val visibility by viewModel.appVisibility.collectAsState()
@@ -67,8 +66,28 @@ internal fun SettingsDialog(viewModel: HomeViewModel, initialApps: Boolean,
     val wallpaper by viewModel.wallpapers.title.collectAsState()
     val usage by viewModel.usage.collectAsState()
     val firewall by TrackerFirewallService.status.collectAsState()
+    val jellyfin by viewModel.jellyfin.state.collectAsState()
+    val jellyfinServer by viewModel.jellyfin.server.collectAsState()
     val selectedCount = apps.count { visibility[it.packageName] ?: HomeApps.isDefault(it.packageName, it.label) }
-    LaunchedEffect(Unit) { androidx.compose.runtime.withFrameNanos { }; sidebar[page].requestFocus() }
+    val firstRow = remember { FocusRequester() }
+    var moveToRows by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        repeat(5) {
+            androidx.compose.runtime.withFrameNanos { }
+            if (runCatching { sidebar[page].requestFocus() }.isSuccess) return@LaunchedEffect
+        }
+    }
+    LaunchedEffect(moveToRows, page) {
+        if (!moveToRows) return@LaunchedEffect
+        repeat(5) {
+            androidx.compose.runtime.withFrameNanos { }
+            if (runCatching { firstRow.requestFocus() }.isSuccess) {
+                moveToRows = false
+                return@LaunchedEffect
+            }
+        }
+        moveToRows = false
+    }
     val entries = when (page) {
         0 -> listOf(
             SettingsEntry("Default launcher", "Choose what opens when you press Home", if (defaultHome) "Selected" else "Set up", onChooseHome),
@@ -82,101 +101,116 @@ internal fun SettingsDialog(viewModel: HomeViewModel, initialApps: Boolean,
             SettingsEntry("Change wallpaper", wallpaper, "Next", { viewModel.wallpapers.next() }),
             SettingsEntry("Wallpaper rotation", "Select to change the interval", if (minutes == 0) "Fixed" else "$minutes min", { viewModel.wallpapers.cycleInterval() }))
         3 -> listOf(
-            SettingsEntry("Movie library", "Manage your Jellyfin connection", "›", onJellyfin),
+            SettingsEntry("Movie library", jellyfinServer?.origin ?: "Enter the server IP or hostname, port, and account",
+                if (jellyfin.connected) "Connected" else "Set up", onJellyfin),
             SettingsEntry("DNS blocking", if (dns.enabled && !dns.verified) "Configured · waiting for Android to confirm connectivity" else "Filter known advertising and tracking domains",
                 if (dnsBusy) "Checking…" else if (dns.verified) "On" else if (dns.enabled) "Pending" else "Off", onToggleDns))
         4 -> SettingsDestinations.all.map { destination -> SettingsEntry(destination.title, destination.detail, "›", { viewModel.openSettings(destination) }) }
         else -> emptyList()
     }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.fillMaxWidth(0.86f).fillMaxHeight(0.84f).widthIn(max = 860.dp)
+        BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val panelWidth = if (maxWidth != Dp.Infinity) maxWidth - 48.dp else 900.dp
+        val panelHeight = if (maxHeight != Dp.Infinity) maxHeight - 36.dp else 520.dp
+        Column(Modifier.size(panelWidth, panelHeight)
             .clip(RoundedCornerShape(22.dp)).background(Color(0xFF141C28))
-            .border(1.dp, Color(0xFF354153), RoundedCornerShape(22.dp)).padding(22.dp)) {
-            Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Settings", color = Glass.Paper, fontSize = 25.sp)
+            .border(1.dp, Color(0xFF354153), RoundedCornerShape(22.dp)).padding(24.dp)) {
+            Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Settings", color = Glass.Paper, fontSize = 28.sp)
                 Spacer(Modifier.weight(1f))
-                SettingsControl(onClick = onClose, modifier = Modifier.width(76.dp).height(36.dp)
+                SettingsControl(onClick = onClose, modifier = Modifier.width(96.dp).height(40.dp)
                     .focusRequester(close).focusProperties {
-                        left = sidebar[page]; down = content; up = FocusRequester.Cancel; right = FocusRequester.Cancel
-                    }) { ink -> Text("Done", color = ink, fontSize = 14.sp) }
+                        left = sidebar[page]; down = firstRow; up = FocusRequester.Cancel; right = FocusRequester.Cancel
+                    }) { ink -> Text("Done", color = ink, fontSize = 16.sp) }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                Column(Modifier.width(146.dp).fillMaxHeight().focusGroup(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.width(188.dp).fillMaxHeight().focusGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     pages.forEachIndexed { index, title ->
                         SettingsControl(onClick = {
                             page = index
-                            scope.launch { androidx.compose.runtime.withFrameNanos { }; runCatching { content.requestFocus() } }
+                            moveToRows = true
                         }, selected = page == index,
-                            modifier = Modifier.fillMaxWidth().height(43.dp).focusRequester(sidebar[index])
+                            modifier = Modifier.fillMaxWidth().height(48.dp).focusRequester(sidebar[index])
                                 .onFocusChanged { if (it.isFocused) page = index }.focusProperties {
-                                    left = FocusRequester.Cancel; right = content
+                                    left = FocusRequester.Cancel; right = firstRow
                                     up = if (index == 0) close else sidebar[index - 1]
                                     down = if (index == pages.lastIndex) FocusRequester.Cancel else sidebar[index + 1]
-                                }, centered = false) { ink -> Text(title, color = ink, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 14.dp)) }
+                                }, centered = false) { ink -> Text(title, color = ink, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 14.dp)) }
                     }
                     Spacer(Modifier.weight(1f))
-                    Text("Dumb TV", color = SettingsMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 12.dp, bottom = 4.dp))
+                    Text("Dumb TV", color = SettingsMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 12.dp, bottom = 4.dp))
                 }
                 Box(Modifier.width(1.dp).fillMaxHeight().background(Color(0xFF2A3546)))
                 Column(Modifier.weight(1f).fillMaxHeight()) {
-                    Text(if (page == 1) "Home apps" else pages[page], color = Glass.Paper, fontSize = 20.sp)
+                    Text(if (page == 1) "Home apps" else pages[page], color = Glass.Paper, fontSize = 22.sp)
                     Text(when (page) {
                         0 -> "Launcher and privacy preferences"
                         1 -> "$selectedCount selected · Changes save automatically"
                         2 -> "Background and rotation"
                         3 -> "Movies and network filtering"
                         else -> "Open your TV’s system settings"
-                    }, color = SettingsMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
+                    }, color = SettingsMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
                     key(page) {
-                        if (page == 1) LazyVerticalGrid(columns = GridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth().weight(1f).focusRequester(content),
-                            contentPadding = PaddingValues(3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            itemsIndexed(apps.sortedBy { it.label.lowercase() }, key = { _, app -> app.packageName }) { index, app ->
-                                val checked = visibility[app.packageName] ?: HomeApps.isDefault(app.packageName, app.label)
-                                SettingsControl(onClick = { viewModel.setAppVisible(app, !checked) }, centered = false,
-                                    modifier = Modifier.fillMaxWidth().height(58.dp).focusProperties {
-                                        if (index % 2 == 0) left = sidebar[page]
-                                        if (index < 2) up = close
-                                    }.semantics { role = Role.Checkbox; toggleableState = if (checked) ToggleableState.On else ToggleableState.Off }) { ink ->
-                                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Image(remember(app.icon) { DrawablePainter(app.icon) }, contentDescription = null,
-                                            contentScale = ContentScale.Fit, modifier = Modifier.size(28.dp))
-                                        Text(app.label, color = ink, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f).padding(horizontal = 9.dp))
-                                        Box(Modifier.size(17.dp).border(1.dp, if (checked) ink else SettingsMuted, RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
-                                            if (checked) Text("✓", color = ink, fontSize = 12.sp)
+                        if (page == 1) {
+                            if (apps.isEmpty()) {
+                                Box(Modifier.fillMaxWidth().weight(1f).focusRequester(firstRow).focusable()) {
+                                    Text("No apps found", color = SettingsMuted, fontSize = 16.sp)
+                                }
+                            } else LazyVerticalGrid(columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                contentPadding = PaddingValues(3.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                itemsIndexed(apps.sortedBy { it.label.lowercase() }, key = { _, app -> app.packageName }) { index, app ->
+                                    val checked = visibility[app.packageName] ?: HomeApps.isDefault(app.packageName, app.label)
+                                    SettingsControl(onClick = { viewModel.setAppVisible(app, !checked) }, centered = false,
+                                        modifier = Modifier.fillMaxWidth().height(72.dp)
+                                            .then(if (index == 0) Modifier.focusRequester(firstRow) else Modifier)
+                                            .focusProperties {
+                                                if (index % 2 == 0) left = sidebar[page]
+                                                if (index < 2) up = close
+                                            }.semantics { role = Role.Checkbox; toggleableState = if (checked) ToggleableState.On else ToggleableState.Off }) { ink ->
+                                        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Image(remember(app.icon) { DrawablePainter(app.icon) }, contentDescription = null,
+                                                contentScale = ContentScale.Fit, modifier = Modifier.size(32.dp))
+                                            Text(app.label, color = ink, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f).padding(horizontal = 10.dp))
+                                            Box(Modifier.size(20.dp).border(1.dp, if (checked) ink else SettingsMuted, RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+                                                if (checked) Text("✓", color = ink, fontSize = 14.sp)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        } else LazyColumn(Modifier.fillMaxWidth().weight(1f).focusRequester(content),
-                            contentPadding = PaddingValues(3.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            itemsIndexed(entries, key = { _, entry -> entry.title }) { index, entry ->
+                        } else Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(3.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            entries.forEachIndexed { index, entry ->
                                 SettingsControl(onClick = entry.action, centered = false,
-                                    modifier = Modifier.fillMaxWidth().height(66.dp).focusProperties {
-                                        left = sidebar[page]
-                                        if (index == 0) up = close
-                                    }) { ink ->
-                                    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    modifier = Modifier.fillMaxWidth().height(76.dp)
+                                        .then(if (index == 0) Modifier.focusRequester(firstRow) else Modifier)
+                                        .focusProperties {
+                                            left = sidebar[page]
+                                            if (index == 0) up = close
+                                        }) { ink ->
+                                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                                            Text(entry.title, color = ink, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            Text(entry.detail, color = ink.copy(alpha = 0.65f), fontSize = 11.sp,
+                                            Text(entry.title, color = ink, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(entry.detail, color = ink.copy(alpha = 0.72f), fontSize = 14.sp,
                                                 maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                                         }
-                                        Text(entry.value, color = ink, fontSize = 12.sp)
+                                        Text(entry.value, color = ink, fontSize = 16.sp)
                                     }
                                 }
                             }
-                            if (page == 3 && dns.supported && !dns.allowed) item {
+                            if (page == 3 && dns.supported && !dns.allowed) {
                                 Text("Enable DNS control once:\nadb shell pm grant org.dumbtv.launcher android.permission.WRITE_SECURE_SETTINGS",
-                                    color = SettingsMuted, fontSize = 11.sp, modifier = Modifier.padding(12.dp))
+                                    color = SettingsMuted, fontSize = 14.sp, modifier = Modifier.padding(12.dp))
                             }
                         }
                     }
                 }
             }
+        }
         }
     }
 }

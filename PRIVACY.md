@@ -21,7 +21,7 @@ For stronger off-device network isolation, deny the TV WAN egress on both IPv4 a
 
 If you grant Usage access, the launcher reads Android’s local usage history to show time spent in apps today and recent screen-on times. The launcher saves today’s per-app totals and the three most recent screen-on times on the TV so they survive a restart. It refreshes these in the background while Usage access is enabled. This data stays on the TV and the launcher clears it after Usage access is revoked.
 
-The launcher disables Android app backup for its own data. Jellyfin credentials are not embedded in the APK, and its encrypted session is stored in the no-backup directory. Online wallpapers still contact their image host; select Fixed to avoid those downloads.
+The launcher disables Android app backup for its own data. The Jellyfin password is not stored. The server address you enter is kept in app preferences on the TV, and the encrypted session is stored in the no-backup directory. Online wallpapers still contact their image host; select Fixed to avoid those downloads.
 
 The app’s Settings privacy screen provides controls and this limitation notice; enabling it does not claim to remove all tracking or erase server-side histories.
 

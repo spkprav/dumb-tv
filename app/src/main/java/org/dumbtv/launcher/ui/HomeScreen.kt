@@ -43,10 +43,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -277,7 +273,7 @@ fun HomeScreen(
         onClose = { settingsOpen = false; appsTab = false })
     if (captureTestOpen) AdCaptureTestDialog(onStart = onAdCaptureTest, onClose = { captureTestOpen = false })
     if (jellyfinOpen) {
-        JellyfinDialog(viewModel.jellyfin, jellyfinState,
+        JellyfinSetupDialog(viewModel.jellyfin,
             onClose = { jellyfinOpen = false; viewModel.jellyfin.cancelConnect() })
     }
     if (privacyOpen) {
@@ -344,56 +340,6 @@ private fun MovieTile(movie: org.dumbtv.launcher.jellyfin.JellyfinLibrary.Movie,
         Text(movie.title, color = Glass.Paper, fontSize = 12.sp, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
         if (movie.year.isNotEmpty()) Text(movie.year, color = Glass.Mist, fontSize = 10.sp)
-    }
-}
-
-@Composable
-private fun JellyfinDialog(library: org.dumbtv.launcher.jellyfin.JellyfinLibrary,
-    state: org.dumbtv.launcher.jellyfin.JellyfinLibrary.State, onClose: () -> Unit) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val fieldColors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Glass.Paper, unfocusedTextColor = Glass.Paper,
-        focusedLabelColor = Glass.Mist, unfocusedLabelColor = Glass.Mist,
-        cursorColor = Glass.Paper, focusedBorderColor = Glass.Ice, unfocusedBorderColor = Glass.Line,
-    )
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.width(600.dp).heightIn(max = 500.dp).clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFA1C2435)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Your Jellyfin library", color = Glass.Paper, fontSize = 24.sp)
-            Text(org.dumbtv.launcher.jellyfin.JellyfinLibrary.SERVER, color = Glass.Mist, fontSize = 13.sp)
-            when {
-                state.connected -> {
-                    Text("Connected · ${state.movies.size} recent movies", color = Glass.Paper)
-                    GlassCard(onClick = { library.refresh(force = true) }, onLongClick = null, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (state.loading) "Refreshing…" else "Refresh movies", color = Glass.Paper, modifier = Modifier.padding(14.dp))
-                    }
-                    GlassCard(onClick = { library.disconnect() }, onLongClick = null, modifier = Modifier.fillMaxWidth()) {
-                        Text("Disconnect this launcher", color = Glass.Paper, modifier = Modifier.padding(14.dp))
-                    }
-                }
-                state.code != null -> {
-                    Text(state.code, color = Glass.Paper, fontSize = 44.sp, letterSpacing = 8.sp)
-                    Text("On your phone/computer, open Jellyfin → user menu → Quick Connect and approve this code using the profile you want on Home.", color = Glass.Mist, fontSize = 15.sp)
-                }
-                state.loading -> Text("Connecting…", color = Glass.Paper)
-                else -> {
-                    OutlinedTextField(username, { username = it }, label = { Text("Username") }, colors = fieldColors, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(password, { password = it }, label = { Text("Password") }, colors = fieldColors, singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GlassCard(onClick = { val entered = password; password = ""; library.signIn(username, entered) }, onLongClick = null, modifier = Modifier.weight(1f)) {
-                            Text("Sign in", color = Glass.Paper, modifier = Modifier.padding(14.dp))
-                        }
-                        GlassCard(onClick = { password = ""; library.connect() }, onLongClick = null, modifier = Modifier.weight(1f)) {
-                            Text("Use Quick Connect", color = Glass.Paper, modifier = Modifier.padding(14.dp))
-                        }
-                    }
-                }
-            }
-            state.error?.let { Text(it, color = Glass.Mist, fontSize = 13.sp) }
-            TextButton(onClick = onClose, modifier = Modifier.remoteOk()) { Text("Done", color = Glass.Paper) }
-        }
     }
 }
 
