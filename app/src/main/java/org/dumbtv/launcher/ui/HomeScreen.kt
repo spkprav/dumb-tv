@@ -135,6 +135,10 @@ fun HomeScreen(
     var transitionKey by remember { mutableStateOf<Int?>(null) }
     val modalOpen = settingsOpen || jellyfinOpen || privacyOpen || captureTestOpen || selected != null
 
+    LaunchedEffect(moviesOpen) {
+        if (moviesOpen) viewModel.jellyfin.refresh(force = true)
+    }
+
     // Only explicit navigation actions request focus. Loading data never steals it.
     LaunchedEffect(navigation.request) {
         if (modalOpen) return@LaunchedEffect
